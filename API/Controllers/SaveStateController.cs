@@ -22,7 +22,7 @@ namespace API.Controllers
 
         // GET: api/SaveState/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<SaveState?>> GetSaveState(Guid id)
+        public async Task<ActionResult<SaveState?>> Get(Guid id)
         {
             var saveState = await _saveStateRepository.GetByID(id);
 
