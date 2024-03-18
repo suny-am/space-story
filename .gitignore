@@ -5,3 +5,6 @@ API/**/bin/
 # Client
 Client/node_modules/
 .vscode
+
+# Misc
+.env*
