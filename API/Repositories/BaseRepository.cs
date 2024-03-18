@@ -1,3 +1,6 @@
+using System.Text.Json;
+using Microsoft.AspNetCore.Mvc;
+
 namespace API.Repositories;
 
 public class BaseRepository<T> : IRepository<T> where T : class
@@ -5,39 +8,66 @@ public class BaseRepository<T> : IRepository<T> where T : class
 
     private readonly GameDbContext gameDbContext = default!;
 
-    public T Add()
+    public async Task<ActionResult<T>> Add(T entity)
     {
-        throw new NotImplementedException();
+        return await Task.Run(() =>
+        {
+            return gameDbContext.Add(entity).Entity;
+        });
     }
 
-    public IEnumerable<T> All()
+    public async Task<ActionResult<IEnumerable<T>>> All()
     {
-        return gameDbContext.Set<T>().ToList();
+        return await Task.Run(() =>
+        {
+            return gameDbContext.Set<T>().ToList();
+        });
     }
 
-    public IEnumerable<T> Find(Func<T, bool> predicate)
+    public async virtual Task<ActionResult<IEnumerable<T?>>> Find(Func<T, bool> predicate)
     {
-        return gameDbContext.Set<T>().Where(predicate);
+        return await Task.Run(() =>
+        {
+            return gameDbContext.Set<T>().Where(predicate).ToList();
+        });
     }
 
-    public T GetByID(Guid id)
+    public async Task<ActionResult<T?>> GetByID(Guid id)
     {
-        throw new NotImplementedException();
+        return await Task.Run(() =>
+        {
+            return gameDbContext.Set<T>().Find(id);
+        }
+        );
     }
 
-    public T Remove(Guid id)
+    public async Task<ActionResult<T?>> Remove(Guid id)
     {
-        throw new NotImplementedException();
+        var target = await GetByID(id) ?? throw new KeyNotFoundException($"[Entity ID {id}] does not exist");
+
+        return gameDbContext.Remove(target).Entity;
     }
 
-    public void SaveChanges()
+    public async virtual Task SaveChanges()
     {
-        throw new NotImplementedException();
+        await gameDbContext.SaveChangesAsync();
     }
 
-    public T Update(Guid id)
+    public async Task<ActionResult<T?>> Update(T entity)
     {
-        throw new NotImplementedException();
+        return await Task.Run(() =>
+        {
+            return gameDbContext.Update(entity).Entity;
+        });
+    }
+
+    public async Task<bool> Any(Func<T, bool> predicate)
+    {
+        return await Task.Run(() =>
+        {
+            var exists = gameDbContext.Set<T>().First(predicate);
+            return exists is null;
+        });
     }
 }
 

@@ -2,32 +2,29 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using API.Repositories;
 using API.Models;
+using System.Text.Json;
 
 namespace API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class SaveStateController : ControllerBase
+    public class SaveStateController(SaveStateRepository<SaveState> repository) : BaseController
     {
-        private readonly GameDbContext _context;
-
-        public SaveStateController(GameDbContext context)
-        {
-            _context = context;
-        }
+        private readonly SaveStateRepository<SaveState> saveStateRepository = repository;
 
         // GET: api/SaveState
         [HttpGet]
         public async Task<ActionResult<IEnumerable<SaveState>>> GetSaveStates()
         {
-            return await _context.SaveStates.ToListAsync();
+            var result = await saveStateRepository.All();
+            return result;
         }
 
         // GET: api/SaveState/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<SaveState>> GetSaveState(Guid id)
+        public async Task<ActionResult<SaveState?>> GetSaveState(Guid id)
         {
-            var saveState = await _context.SaveStates.FindAsync(id);
+            var saveState = await saveStateRepository.GetByID(id);
 
             if (saveState == null)
             {
@@ -40,20 +37,22 @@ namespace API.Controllers
         // PUT: api/SaveState/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutSaveState(Guid id, SaveState saveState)
+        public async Task<IActionResult> PutSaveState(Guid id, JsonContent stateUpdateData)
         {
-            if (id != saveState.Id)
+            var target = await saveStateRepository.GetByID(id);
+
+            if (target.Value is null)
             {
                 return BadRequest();
             }
 
-            _context.Entry(saveState).State = EntityState.Modified;
-
             try
             {
-                await _context.SaveChangesAsync();
+                target.Value.Data = JsonSerializer.Serialize(stateUpdateData);
+                await saveStateRepository.Update(target.Value);
+                await saveStateRepository.SaveChanges();
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateConcurrencyException ex)
             {
                 if (!SaveStateExists(id))
                 {
@@ -61,7 +60,7 @@ namespace API.Controllers
                 }
                 else
                 {
-                    throw;
+                    throw new DbUpdateConcurrencyException($"Could not save changes: {ex.Message}");
                 }
             }
 
@@ -71,33 +70,52 @@ namespace API.Controllers
         // POST: api/SaveState
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<SaveState>> PostSaveState(SaveState saveState)
+        public async Task<ActionResult<SaveState>> PostSaveState(JsonContent stateData)
         {
-            _context.SaveStates.Add(saveState);
-            await _context.SaveChangesAsync();
+            string dataToStore = JsonSerializer.Serialize(stateData);
+            SaveState newSaveState = new() { Data = dataToStore };
 
-            return CreatedAtAction("GetSaveState", new { id = saveState.Id }, saveState);
+            try
+            {
+                await saveStateRepository.Add(newSaveState);
+                await saveStateRepository.SaveChanges();
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new DbUpdateException($"Could not save to database: {ex.Message}");
+            }
+
+            return CreatedAtAction("GetSaveState", new { id = newSaveState.Id }, newSaveState);
         }
 
         // DELETE: api/SaveState/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteSaveState(Guid id)
         {
-            var saveState = await _context.SaveStates.FindAsync(id);
-            if (saveState == null)
+            var saveState = await saveStateRepository.GetByID(id);
+
+            if (saveState.Value == null)
             {
                 return NotFound();
             }
 
-            _context.SaveStates.Remove(saveState);
-            await _context.SaveChangesAsync();
+            try
+            {
+                await saveStateRepository.Remove(saveState.Value.Id);
+                await saveStateRepository.SaveChanges();
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new DbUpdateException($"Could not delete saveState: {ex.Message}");
+            }
 
             return NoContent();
         }
 
         private bool SaveStateExists(Guid id)
         {
-            return _context.SaveStates.Any(e => e.Id == id);
+            var exists = saveStateRepository.Any(saveState => saveState.Id == id);
+            return exists.Result;
         }
     }
 }

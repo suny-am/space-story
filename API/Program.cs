@@ -1,10 +1,20 @@
 using API.Repositories;
+using API.Utilities;
+using Microsoft.EntityFrameworkCore;
+
+var root = Directory.GetCurrentDirectory();
+var dotenv = Path.Combine(root, ".env.api");
+DotEnv.Load(dotenv);
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddDbContext<GameDbContext>();
+builder.Services.AddDbContext<GameDbContext>(opt => {
+    opt.UseSqlite(builder.Configuration.GetConnectionString("SQLite"));
+});
+
+
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
