@@ -1,12 +1,11 @@
-using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Repositories;
 
-public class BaseRepository<T> : IRepository<T> where T : class
+public class BaseRepository<T>(GameDbContext context) : IRepository<T> where T : class
 {
 
-    private readonly GameDbContext gameDbContext = default!;
+    private readonly GameDbContext gameDbContext = context;
 
     public async Task<ActionResult<T>> Add(T entity)
     {
