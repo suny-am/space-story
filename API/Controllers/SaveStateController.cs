@@ -1,37 +1,37 @@
+using API.Models;
+using API.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using API.Repositories;
-using API.Models;
 using System.Text.Json;
 
 namespace API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class SaveStateController(SaveStateRepository<SaveState> repository) : BaseController
+    public class SaveStateController(IRepository<SaveState> repository) : BaseController
     {
-        private readonly SaveStateRepository<SaveState> saveStateRepository = repository;
+        private readonly IRepository<SaveState> _saveStateRepository = repository;
 
         // GET: api/SaveState
         [HttpGet]
         public async Task<ActionResult<IEnumerable<SaveState>>> GetSaveStates()
         {
-            var result = await saveStateRepository.All();
+            var result = await _saveStateRepository.All();
             return result;
         }
 
         // GET: api/SaveState/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<SaveState?>> GetSaveState(Guid id)
+        public async Task<ActionResult<SaveState?>> Get(Guid id)
         {
-            var saveState = await saveStateRepository.GetByID(id);
+            var saveState = await _saveStateRepository.GetByID(id);
 
             if (saveState == null)
             {
                 return NotFound();
             }
 
-            return saveState;
+            return Ok(saveState);
         }
 
         // PUT: api/SaveState/5
@@ -39,7 +39,7 @@ namespace API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutSaveState(Guid id, JsonContent stateUpdateData)
         {
-            var target = await saveStateRepository.GetByID(id);
+            var target = await _saveStateRepository.GetByID(id);
 
             if (target.Value is null)
             {
@@ -49,8 +49,8 @@ namespace API.Controllers
             try
             {
                 target.Value.Data = JsonSerializer.Serialize(stateUpdateData);
-                await saveStateRepository.Update(target.Value);
-                await saveStateRepository.SaveChanges();
+                await _saveStateRepository.Update(target.Value);
+                await _saveStateRepository.SaveChanges();
             }
             catch (DbUpdateConcurrencyException ex)
             {
@@ -77,8 +77,8 @@ namespace API.Controllers
 
             try
             {
-                await saveStateRepository.Add(newSaveState);
-                await saveStateRepository.SaveChanges();
+                await _saveStateRepository.Add(newSaveState);
+                await _saveStateRepository.SaveChanges();
             }
             catch (DbUpdateException ex)
             {
@@ -92,7 +92,7 @@ namespace API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteSaveState(Guid id)
         {
-            var saveState = await saveStateRepository.GetByID(id);
+            var saveState = await _saveStateRepository.GetByID(id);
 
             if (saveState.Value == null)
             {
@@ -101,8 +101,8 @@ namespace API.Controllers
 
             try
             {
-                await saveStateRepository.Remove(saveState.Value.Id);
-                await saveStateRepository.SaveChanges();
+                await _saveStateRepository.Remove(saveState.Value.Id);
+                await _saveStateRepository.SaveChanges();
             }
             catch (DbUpdateException ex)
             {
@@ -114,7 +114,7 @@ namespace API.Controllers
 
         private bool SaveStateExists(Guid id)
         {
-            var exists = saveStateRepository.Any(saveState => saveState.Id == id);
+            var exists = _saveStateRepository.Any(saveState => saveState.Id == id);
             return exists.Result;
         }
     }

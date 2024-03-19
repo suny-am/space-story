@@ -3,7 +3,7 @@ using API.Models;
 
 namespace API.Repositories;
 
-public class GameDbContext(DbContextOptions<GameDbContext> options) : DbContext(options)
+public class GameDbContext() : DbContext()
 {
 
     public DbSet<SaveState> SaveStates { get; set; } = null!;
