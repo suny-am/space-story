@@ -8,8 +8,6 @@ namespace API.Tests;
 
 public class SaveControllerTests
 {
-
-    private Mock<GameDbContext> _mockContext = new();
     private Mock<IRepository<SaveState>> _mockRepository = new();
     private Guid _targetGuid;
     private SaveState _mockSaveState = null!;
@@ -17,7 +15,7 @@ public class SaveControllerTests
 
     private void Setup()
     {
-        _mockContext = new Mock<GameDbContext>();
+        _ = new Mock<GameDbContext>();
         _mockRepository = new Mock<IRepository<SaveState>>();
         _targetGuid = Guid.NewGuid();
         _mockSaveState = new SaveState { Id = _targetGuid, Data = "Some data here" };

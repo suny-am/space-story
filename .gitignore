@@ -1,7 +1,12 @@
 # API
+.mono/
 API/**/obj/
 API/**/bin/
 API/.mono/
+
+API.Tests/**/obj/
+API.Tests/**/bin/
+API.Tests/.mono/
 
 # Client
 Client/node_modules/
