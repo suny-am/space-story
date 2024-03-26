@@ -45,6 +45,8 @@ public class SaveControllerTests
         // ACT
         var response = await _mockSaveStateController.Get(_targetGuid);
         var result = response.Result as OkObjectResult;
+
+        //ASSERT
         Assert.IsType<ActionResult<SaveState>>(result!.Value);
     }
 
@@ -60,10 +62,11 @@ public class SaveControllerTests
         var model = result!.Value as ActionResult<SaveState>;
         var saveStateModel = Assert.IsType<SaveState>(model!.Value);
 
+        //ASSERT
         Assert.IsType<SaveState>(saveStateModel);
     }
     [Fact]
-    public async Task Get_Returns_SaveState_With_Correct_Data()
+    public async Task Get_Returns_Correct_SaveState()
     {
         // ARRANGE
         Setup();
@@ -74,8 +77,23 @@ public class SaveControllerTests
         var model = result!.Value as ActionResult<SaveState>;
         var saveStateModel = model!.Value;
 
+        //ASSERT
         Assert.Equal(_targetGuid, saveStateModel!.Id);
-        Assert.Equal("Some data here", saveStateModel!.Data);
+    }
 
+    [Fact]
+    public async Task Get_Returns_Correct_SaveState_Data()
+    {
+        // ARRANGE
+        Setup();
+
+        // ACT
+        var response = await _mockSaveStateController.Get(_targetGuid);
+        var result = response.Result as OkObjectResult;
+        var model = result!.Value as ActionResult<SaveState>;
+        var saveStateModel = model!.Value;
+
+        //ASSERT
+        Assert.Equal("Some data here", saveStateModel!.Data);
     }
 }
